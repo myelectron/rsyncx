@@ -1,0 +1,13 @@
+* {
+    margin: 0;
+    border: 0;
+    padding: 0;
+}
+html {
+    width: 100vw;
+}
+body {
+    width: 100vw;
+    padding: 20px;
+    box-sizing: border-box;
+}
