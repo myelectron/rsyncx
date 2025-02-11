@@ -1,6 +1,8 @@
 import {
     VxeUI,
+    VxeNumberInput,
     VxeButton,
+    VxeSwitch,
     VxeButtonGroup,
     VxeDrawer,
     VxeForm,
@@ -25,12 +27,15 @@ import 'vxe-pc-ui/lib/style.css';
 
 // 导入默认的语言
 import zhCN from 'vxe-table/es/locale/lang/zh-CN';
+import { App } from 'vue';
 
 VxeUI.setI18n('zh-CN', zhCN);
 VxeUI.setLanguage('zh-CN');
 
 // 可选组件
-export function lazyVxeUI(app) {
+export function lazyVxeUI(app: App) {
+    app.use(VxeNumberInput);
+    app.use(VxeSwitch);
     app.use(VxeButton);
     app.use(VxeButtonGroup);
     app.use(VxeDrawer);
@@ -46,7 +51,7 @@ export function lazyVxeUI(app) {
     app.use(VxeUpload);
 }
 
-export function lazyVxeTable(app) {
+export function lazyVxeTable(app: App) {
     app.use(VxeTable);
     app.use(VxeColumn);
     app.use(VxeColgroup);
