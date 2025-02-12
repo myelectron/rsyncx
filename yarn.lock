@@ -339,9 +339,9 @@
     xterm-addon-search "^0.8.0"
 
 "@electron/asar@^3.2.1", "@electron/asar@^3.2.13", "@electron/asar@^3.2.5", "@electron/asar@^3.2.7":
-  version "3.2.18"
-  resolved "https://registry.npmmirror.com/@electron/asar/-/asar-3.2.18.tgz#fa607f829209bab8b9e0ce6658d3fe81b2cba517"
-  integrity sha512-2XyvMe3N3Nrs8cV39IKELRHTYUWFKrmqqSY1U+GMlc0jvqjIVnoxhNd2H4JolWQncbJi1DCvb5TNxZuI2fEjWg==
+  version "3.3.1"
+  resolved "https://registry.npmmirror.com/@electron/asar/-/asar-3.3.1.tgz#cd14e897770d9844673dd7c1dc8944e086e1e0ea"
+  integrity sha512-WtpC/+34p0skWZiarRjLAyqaAX78DofhDxnREy/V5XHfu1XEXbFCSSMcDQ6hNCPJFaPy8/NnUgYuf9uiCkvKPg==
   dependencies:
     commander "^5.0.0"
     glob "^7.1.6"
@@ -2983,9 +2983,9 @@ flora-colossus@^2.0.0:
     fs-extra "^10.1.0"
 
 for-each@^0.3.3:
-  version "0.3.4"
-  resolved "https://registry.npmmirror.com/for-each/-/for-each-0.3.4.tgz#814517ffc303d1399b2564d8165318e735d0341c"
-  integrity sha512-kKaIINnFpzW6ffJNDjjyjrk21BkDx38c0xa/klsT8VzLCaMEefv4ZTacrcVR4DmgTeBra++jMDAfS/tS799YDw==
+  version "0.3.5"
+  resolved "https://registry.npmmirror.com/for-each/-/for-each-0.3.5.tgz#d650688027826920feeb0af747ee7b9421a41d47"
+  integrity sha512-dKx12eRCVIzqCxFGplyFKJMPvLEWgmNtUrpTiJIR5u97zEhRG8ySrtboPHZXx7daLxQVrl643cTzbab2tkQjxg==
   dependencies:
     is-callable "^1.2.7"
 
@@ -4713,9 +4713,9 @@ possible-typed-array-names@^1.0.0:
   integrity sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==
 
 postcss@^8.4.43, postcss@^8.4.48:
-  version "8.5.1"
-  resolved "https://registry.npmmirror.com/postcss/-/postcss-8.5.1.tgz#e2272a1f8a807fafa413218245630b5db10a3214"
-  integrity sha512-6oz2beyjc5VMn/KV1pPw8fliQkhBXrVn1Z3TVyqZxU8kZpzEKhBdmCFqI6ZbmGtamQvQGuU1sgPTk8ZrXDD7jQ==
+  version "8.5.2"
+  resolved "https://registry.npmmirror.com/postcss/-/postcss-8.5.2.tgz#e7b99cb9d2ec3e8dd424002e7c16517cb2b846bd"
+  integrity sha512-MjOadfU3Ys9KYoX0AdkBlFEF1Vx37uCCeN4ZHnmwm9FfpbsGWMZeBLMmmpY+6Ocqod7mkdZ0DT31OlbsFrLlkA==
   dependencies:
     nanoid "^3.3.8"
     picocolors "^1.1.1"
@@ -6120,16 +6120,16 @@ vue@^3.5.13:
     "@vue/shared" "3.5.13"
 
 vxe-pc-ui@^4.3.82:
-  version "4.3.82"
-  resolved "https://registry.npmmirror.com/vxe-pc-ui/-/vxe-pc-ui-4.3.82.tgz#eec83bd6f6458edbfc8dfa725a68db09cbb791ca"
-  integrity sha512-h3El5nMjGifzoAyoeHGtLGrU6mpeXe2o7YcYpNTGY3eiQY0ETkSoU9zHuhglPD7tPfJrX+b3OPDAF1gMN3ENGg==
+  version "4.3.83"
+  resolved "https://registry.npmmirror.com/vxe-pc-ui/-/vxe-pc-ui-4.3.83.tgz#0580fcb83d3fd24b25f0f932461ef805c9d4fd1b"
+  integrity sha512-EjzSjHzE/OEHuXqcAntQOsfGGqmFlVlXlSiE8Ewg6kGkof9d0EpsqSP2osiMj8qBPKw2Xf5xb8KF4jpZwrQXCw==
   dependencies:
     "@vxe-ui/core" "^4.0.29"
 
 vxe-table@^4.10.5:
-  version "4.10.11"
-  resolved "https://registry.npmmirror.com/vxe-table/-/vxe-table-4.10.11.tgz#dbeeb4a2006cf86b1015cc1f7875a0b5659900e8"
-  integrity sha512-MrDUiFxLpagL2RTzpYsMObAHB8JLfNIXfqFc54CALbsqZ7hOB2YS3L+GtO9xh8JpG7qAEmhqnN8I+TioVHgjbQ==
+  version "4.10.13"
+  resolved "https://registry.npmmirror.com/vxe-table/-/vxe-table-4.10.13.tgz#b02d4ba612faac3b0848db760743a98ca2aea567"
+  integrity sha512-VCVP7kt0pcdpN1exPd6gNKqKyASVLGBGOp4VnkkEbGzRIqjf9aL/8PXBZ/Bh4oSBgXop8q0dm65TIXkot4UGoQ==
   dependencies:
     vxe-pc-ui "^4.3.82"
 

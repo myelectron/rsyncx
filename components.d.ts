@@ -9,5 +9,6 @@ declare module 'vue' {
   export interface GlobalComponents {
     AButton: typeof import('ant-design-vue/es')['Button']
     ADivider: typeof import('ant-design-vue/es')['Divider']
+    APopconfirm: typeof import('ant-design-vue/es')['Popconfirm']
   }
 }

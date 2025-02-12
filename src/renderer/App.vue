@@ -1,46 +1,25 @@
 <template>
-    <vxe-grid ref="gridRef" v-bind="gridOptions">
-        <template #toolbarButtons>
-            <a-button v-show="!editStatus" type="primary" :icon="h(FormOutlined)" @click="onEdit">编辑</a-button>
-            <a-button v-show="editStatus" type="primary" :icon="h(RollbackOutlined)" @click="onEditCancel"
-                >退出编辑</a-button
-            >
-            <a-divider type="vertical" />
-            <a-button v-show="editStatus" type="primary" :icon="h(PlusOutlined)" @click="onAdd">新增</a-button>
-            <a-divider type="vertical" />
-            <a-button v-show="editStatus" type="primary" :icon="h(CheckOutlined)" @click="onSave">保存</a-button>
-            <a-button v-show="editStatus" type="primary" :icon="h(CloseOutlined)" @click="onCancel">放弃</a-button>
-            <a-button v-show="!editStatus" type="primary" :icon="h(ImportOutlined)">导入</a-button>
-            <a-button
-                v-show="!editStatus"
-                :disabled="gridRef?.getCheckboxRecords().length === 0"
-                type="primary"
-                :icon="h(ExportOutlined)"
-                >导出</a-button
-            >
-        </template>
-        <template #columns_options="{ row }">
-            <a-button
-                v-show="editStatus && !isPendingByRow(row)"
-                type="primary"
-                :icon="h(DeleteOutlined)"
-                @click="makeDel(row)"
-            >
-                删除
-            </a-button>
-            <a-button
-                v-show="editStatus && isPendingByRow(row)"
-                type="primary"
-                :icon="h(UndoOutlined)"
-                @click="makeDel(row)"
-            >
-                恢复
-            </a-button>
-            <a-button v-show="!editStatus" type="primary" :icon="h(RightCircleOutlined)" @click="makeDel(row)">
-                执行
-            </a-button>
-        </template>
-    </vxe-grid>
+    <div class="task">
+        <vxe-grid ref="gridRef" v-bind="gridOptions" v-on="gridEvents">
+            <template #toolbarButtons>
+                <a-button type="primary" :icon="h(PlusOutlined)" @click="onAdd">新增</a-button>
+                <a-divider type="vertical" />
+                <a-button :disabled="!hasChanged" :icon="h(CheckOutlined)" @click="onSave">保存</a-button>
+                <a-button :disabled="!hasChanged" :icon="h(CloseOutlined)" @click="onCancel">放弃</a-button>
+            </template>
+            <template #action="{ row }">
+                <a-button :icon="h(DeleteOutlined)" @click="makeDel(row)">删除</a-button>
+                <a-button
+                    type="primary"
+                    :icon="h(RightCircleOutlined)"
+                    :disabled="isPendingByRow(row)"
+                    @click="makeDel(row)"
+                    >执行</a-button
+                >
+            </template>
+        </vxe-grid>
+    </div>
+    <div class="display"></div>
 </template>
 
 <script setup lang="ts">
@@ -52,28 +31,33 @@ import {
     DeleteOutlined,
     UndoOutlined,
     RightCircleOutlined,
+    SaveOutlined,
     CheckOutlined,
     CloseOutlined,
     ImportOutlined,
     ExportOutlined,
 } from '@ant-design/icons-vue';
-import { VxeUI, VxeGridInstance, VxeGridProps, VxeGridPropTypes } from 'vxe-table';
+import { VxeUI, VxeGridInstance, VxeGridListeners, VxeGridProps, VxeTablePropTypes, VxeGridPropTypes } from 'vxe-table';
 import { JobMo } from './mo/JobMo';
 import { ulid } from 'ulid';
 
 const gridRef = ref<VxeGridInstance<JobMo>>();
 const editStatus = ref(false);
 
-const data: JobMo[] = [];
+const editRules: VxeTablePropTypes.EditRules<JobMo> = {
+    name: [{ required: true, message: '必须填写' }],
+    src: [{ required: true, message: '必须填写' }],
+    target: [{ required: true, message: '必须填写' }],
+};
 
 const columns: VxeGridPropTypes.Columns<JobMo> = [
-    { type: 'checkbox', width: 50, resizable: false, fixed: 'left' },
-    { type: 'seq', width: 50, resizable: false, fixed: 'left' },
+    // { type: 'seq', width: 50, resizable: false, fixed: 'left' },
     {
         field: 'name',
         title: '名称',
         width: '200',
-        fixed: 'left',
+        // fixed: 'left',
+        dragSort: true,
         editRender: { name: 'input' },
     },
     { field: 'src', title: '来源', width: '400', editRender: { name: 'input' } },
@@ -98,18 +82,25 @@ const columns: VxeGridPropTypes.Columns<JobMo> = [
             },
         },
     },
-    { title: '操作', fixed: 'right', width: 110, resizable: false, slots: { default: 'columns_options' } },
+    { title: '操作', fixed: 'right', width: 202, resizable: false, slots: { default: 'action' } },
 ];
 
 const gridOptions = reactive<VxeGridProps<JobMo>>({
     stripe: true,
     keepSource: true,
-    // height: '100%',
+    showOverflow: true,
+    height: '100%',
     toolbarConfig: {
+        import: true,
+        export: true,
+        custom: true,
+        zoom: true,
         slots: {
             buttons: 'toolbarButtons',
         },
     },
+    importConfig: {},
+    exportConfig: {},
     columnConfig: {
         resizable: true,
     },
@@ -118,41 +109,16 @@ const gridOptions = reactive<VxeGridProps<JobMo>>({
         isHover: true,
         drag: true,
     },
-    checkboxConfig: {
-        range: true,
-    },
     editConfig: {
-        enabled: false,
-        trigger: 'click',
+        trigger: 'dblclick',
         mode: 'row',
+        showIcon: false,
+        showStatus: true,
     },
     resizableConfig: {
         isDblclickAutoWidth: true,
     },
-    validConfig: {
-        msgMode: 'full',
-    },
-    editRules: {
-        name: [{ required: true, message: '必须填写' }],
-        src: [{ required: true, message: '必须填写' }],
-        target: [{ required: true, message: '必须填写' }],
-    },
-    mouseConfig: {
-        selected: true,
-    },
-    keyboardConfig: {
-        isEdit: true,
-        isArrow: true,
-        isEnter: true,
-        isBack: true,
-        isDel: true,
-        isEsc: true,
-        isTab: true,
-        isClip: true,
-        isFNR: true,
-        isChecked: true,
-        isLastEnterAppendRow: true,
-    },
+    editRules,
     columns,
     // data,
     //  [
@@ -166,40 +132,35 @@ const gridOptions = reactive<VxeGridProps<JobMo>>({
     // ],
 });
 
-const setEditStatus = (value: boolean) => {
-    editStatus.value = value;
+const gridEvents: VxeGridListeners<JobMo> = {
+    editClosed({ row }) {
+        const $grid = gridRef.value;
+        if ($grid) {
+            if ($grid.isUpdateByRow(row)) {
+                hasChanged.value = true;
+            }
+        }
+    },
+};
 
-    gridOptions.editConfig.enabled = value;
-
+const onAdd = async () => {
     const $grid = gridRef.value;
-    columns.find((item) => item.field === 'name').dragSort = value;
-    columns.find((item) => item.field === 'delete').cellRender.props.disabled = !value;
-    $grid.loadColumn(columns);
+    const newRow: JobMo = {
+        id: ulid(),
+        name: undefined,
+        src: undefined,
+        target: undefined,
+    };
+    const { row } = await $grid.insertAt(newRow, null);
+    await $grid.setEditRow(row);
+    hasChanged.value = true;
 };
 
-const onEdit = () => {
-    setEditStatus(true);
-};
+const hasChanged = ref(false);
 
-const onEditCancel = async () => {
-    if (hasChanged()) {
-        const result = await VxeUI.modal.confirm('确认要放弃修改吗？');
-        if (result !== 'confirm') return;
-    }
-    setEditStatus(false);
-};
-
-const onCancel = async () => {
+const checkChanged = () => {
     const $grid = gridRef.value;
-    if (hasChanged()) {
-        const result = await VxeUI.modal.confirm('确认要放弃修改吗？');
-        if (result !== 'confirm') return;
-        $grid.revertData();
-    }
-};
-
-const hasChanged = () => {
-    const $grid = gridRef.value;
+    if (!$grid) return false;
     const { insertRecords, updateRecords, removeRecords, pendingRecords } = $grid.getRecordset();
     console.log(insertRecords, updateRecords, removeRecords, pendingRecords);
 
@@ -208,26 +169,10 @@ const hasChanged = () => {
     );
 };
 
-const onAdd = () => {
-    const $grid = gridRef.value;
-    const newRow: JobMo = {
-        id: ulid(),
-        name: undefined,
-        src: undefined,
-        target: undefined,
-    };
-    $grid.insertAt(newRow, null);
-    nextTick(() => {
-        const $grid = gridRef.value;
-        if ($grid) {
-            $grid.setEditRow(newRow);
-        }
-    });
-};
-
 const makeDel = async (row: JobMo) => {
     const $grid = gridRef.value;
     await $grid.togglePendingRow(row);
+    hasChanged.value = checkChanged();
 };
 
 const isPendingByRow = (row: JobMo) => {
@@ -240,23 +185,47 @@ const isPendingByRow = (row: JobMo) => {
  */
 const validate = async () => {
     const $grid = gridRef.value;
-    const result = !!!(await $grid.fullValidate(true));
-    result
-        ? VxeUI.modal.message({ status: 'success', content: '校验成功！' })
-        : VxeUI.modal.message({ status: 'error', content: '校验不通过！' });
+    const result = !!!(await $grid.validate(true));
+    result || VxeUI.modal.message({ status: 'error', content: '校验不通过！' });
     return result;
 };
 
 const onSave = async () => {
-    if (await !validate()) return;
     const $grid = gridRef.value;
-    const { insertRecords, updateRecords, removeRecords, pendingRecords } = $grid.getRecordset();
-    console.log(insertRecords, updateRecords, removeRecords, pendingRecords);
+    if ($grid) {
+        const valid = await validate();
+        if (!valid) return;
+        await $grid.clearEdit();
+        gridOptions.loading = true;
+        setTimeout(() => {
+            const { insertRecords, updateRecords, removeRecords, pendingRecords } = $grid.getRecordset();
+            console.log(insertRecords, updateRecords, removeRecords, pendingRecords);
+            gridOptions.loading = false;
+            VxeUI.modal.message({ content: '保存成功！', status: 'success' });
+            hasChanged.value = false;
+        }, 300);
+    }
+};
+
+const onCancel = async () => {
+    const $grid = gridRef.value;
+    if (hasChanged.value) {
+        const result = await VxeUI.modal.confirm('确认要放弃修改吗？');
+        if (result !== 'confirm') return;
+        await $grid.revertData();
+        hasChanged.value = false;
+    }
 };
 </script>
 
 <style scoped>
 button {
     margin: 0 5px;
+}
+.task {
+    flex-grow: 1;
+}
+.display {
+    height: 300px;
 }
 </style>
