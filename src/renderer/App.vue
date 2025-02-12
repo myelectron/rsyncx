@@ -24,25 +24,12 @@
 
 <script setup lang="ts">
 import { h, ref, reactive } from 'vue';
-import {
-    FormOutlined,
-    PlusOutlined,
-    RollbackOutlined,
-    DeleteOutlined,
-    UndoOutlined,
-    RightCircleOutlined,
-    SaveOutlined,
-    CheckOutlined,
-    CloseOutlined,
-    ImportOutlined,
-    ExportOutlined,
-} from '@ant-design/icons-vue';
+import { PlusOutlined, DeleteOutlined, RightCircleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons-vue';
 import { VxeUI, VxeGridInstance, VxeGridListeners, VxeGridProps, VxeTablePropTypes, VxeGridPropTypes } from 'vxe-table';
 import { JobMo } from './mo/JobMo';
-import { ulid } from 'ulid';
+import { JobApi } from './api/JobApi';
 
 const gridRef = ref<VxeGridInstance<JobMo>>();
-const editStatus = ref(false);
 
 const editRules: VxeTablePropTypes.EditRules<JobMo> = {
     name: [{ required: true, message: '必须填写' }],
@@ -51,12 +38,10 @@ const editRules: VxeTablePropTypes.EditRules<JobMo> = {
 };
 
 const columns: VxeGridPropTypes.Columns<JobMo> = [
-    // { type: 'seq', width: 50, resizable: false, fixed: 'left' },
     {
         field: 'name',
         title: '名称',
         width: '200',
-        // fixed: 'left',
         dragSort: true,
         editRender: { name: 'input' },
     },
@@ -90,6 +75,9 @@ const gridOptions = reactive<VxeGridProps<JobMo>>({
     keepSource: true,
     showOverflow: true,
     height: '100%',
+    resizableConfig: {
+        isDblclickAutoWidth: true,
+    },
     toolbarConfig: {
         import: true,
         export: true,
@@ -108,6 +96,7 @@ const gridOptions = reactive<VxeGridProps<JobMo>>({
         useKey: true,
         isHover: true,
         drag: true,
+        isCurrent: true,
     },
     editConfig: {
         trigger: 'dblclick',
@@ -115,8 +104,9 @@ const gridOptions = reactive<VxeGridProps<JobMo>>({
         showIcon: false,
         showStatus: true,
     },
-    resizableConfig: {
-        isDblclickAutoWidth: true,
+    keyboardConfig: {
+        isTab: true,
+        isEsc: true,
     },
     editRules,
     columns,
@@ -133,7 +123,7 @@ const gridOptions = reactive<VxeGridProps<JobMo>>({
 });
 
 const gridEvents: VxeGridListeners<JobMo> = {
-    editClosed({ row }) {
+    cellClick({ row }) {
         const $grid = gridRef.value;
         if ($grid) {
             if ($grid.isUpdateByRow(row)) {
@@ -141,12 +131,34 @@ const gridEvents: VxeGridListeners<JobMo> = {
             }
         }
     },
+    editClosed({ row }) {
+        const $grid = gridRef.value;
+        if ($grid) {
+            // if ($grid.isUpdateByRow(row)) {
+            //     hasChanged.value = true;
+            // }
+            hasChanged.value = checkChanged();
+        }
+    },
+};
+
+const refresh = async () => {
+    gridOptions.loading = true;
+    try {
+        gridOptions.data = await JobApi.list();
+        hasChanged.value = false;
+    } catch (error) {
+        console.error(error);
+        VxeUI.modal.message({ content: '刷新失败！', status: 'error' });
+    } finally {
+        gridOptions.loading = false;
+    }
 };
 
 const onAdd = async () => {
     const $grid = gridRef.value;
     const newRow: JobMo = {
-        id: ulid(),
+        id: undefined,
         name: undefined,
         src: undefined,
         target: undefined,
@@ -162,8 +174,6 @@ const checkChanged = () => {
     const $grid = gridRef.value;
     if (!$grid) return false;
     const { insertRecords, updateRecords, removeRecords, pendingRecords } = $grid.getRecordset();
-    console.log(insertRecords, updateRecords, removeRecords, pendingRecords);
-
     return (
         insertRecords.length > 0 || updateRecords.length > 0 || removeRecords.length > 0 || pendingRecords.length > 0
     );
@@ -191,19 +201,33 @@ const validate = async () => {
 };
 
 const onSave = async () => {
-    const $grid = gridRef.value;
-    if ($grid) {
+    gridOptions.loading = true;
+    try {
         const valid = await validate();
-        if (!valid) return;
-        await $grid.clearEdit();
-        gridOptions.loading = true;
-        setTimeout(() => {
+        const $grid = gridRef.value;
+        if ($grid) {
+            if (!valid) return;
             const { insertRecords, updateRecords, removeRecords, pendingRecords } = $grid.getRecordset();
             console.log(insertRecords, updateRecords, removeRecords, pendingRecords);
-            gridOptions.loading = false;
-            VxeUI.modal.message({ content: '保存成功！', status: 'success' });
-            hasChanged.value = false;
-        }, 300);
+            for (const record of insertRecords) {
+                await JobApi.add(record);
+            }
+            for (const record of updateRecords) {
+                await JobApi.update(record);
+            }
+            for (const record of removeRecords) {
+                await JobApi.del(record.id);
+            }
+            for (const record of pendingRecords) {
+                await JobApi.del(record.id);
+            }
+            await refresh();
+        }
+    } catch (error) {
+        console.error(error);
+        VxeUI.modal.message({ content: '保存失败！', status: 'error' });
+    } finally {
+        gridOptions.loading = false;
     }
 };
 
@@ -212,10 +236,13 @@ const onCancel = async () => {
     if (hasChanged.value) {
         const result = await VxeUI.modal.confirm('确认要放弃修改吗？');
         if (result !== 'confirm') return;
-        await $grid.revertData();
-        hasChanged.value = false;
+        await refresh();
     }
 };
+
+onMounted(async () => {
+    await refresh();
+});
 </script>
 
 <style scoped>
