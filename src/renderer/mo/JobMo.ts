@@ -1,17 +1,17 @@
-// /** 工作 */
-// interface JobMo {
-//     id: string;
-//     name: string;
-//     src: string;
-//     target: string;
-//     port?: number;
-//     delete?: boolean;
-//     exclude?: string;
-//     args?: string;
-//     seq?: number;
-// }
+/** 工作 */
+export interface JobMo {
+    id: string;
+    name: string;
+    src: string;
+    target: string;
+    port?: number;
+    delete?: boolean;
+    exclude?: string;
+    args?: string;
+    seq?: number;
+}
 
-const JobMo = {
+const jobMo: JobMo = {
     id: '',
     name: '',
     src: '',
@@ -21,6 +21,6 @@ const JobMo = {
     exclude: '',
     args: '',
     seq: 0,
-} as const;
+};
 
-export { JobMo };
+export const jobMoKeys: string[] = Object.keys(jobMo);
