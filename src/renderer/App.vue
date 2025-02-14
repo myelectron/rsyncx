@@ -68,7 +68,6 @@ const pushDisplayItem = (item: { type: 'info' | 'error'; content: string }) => {
     });
 };
 onRsyncOutput((data) => {
-    console.log('data', data);
     const lines = data.split('\n');
     for (let line of lines) {
         line = line.trim();
@@ -227,11 +226,32 @@ const gridEvents: VxeGridListeners<JobMo> = {
             }
         }
     },
-    editClosed({ row }) {
+    editClosed() {
         const $grid = gridRef.value;
         if ($grid) {
             hasChanged.value = checkChanged();
         }
+    },
+    rowDragend() {
+        const $grid = gridRef.value;
+        if ($grid) {
+            // const data = $grid.getData();
+            // console.log('fullData', data);
+            // let seq = 0;
+            // for (let record of data) {
+            //     console.log('record', record);
+            //     const row = $grid.getRowById(record.id);
+            //     console.log('row', row);
+            //     if (isPendingByRow(row)) {
+            //         continue;
+            //     }
+            //     seq++;
+            //     if (row.seq !== seq + 1) {
+            //         row.seq = seq + 1;
+            //     }
+            // }
+        }
+        hasChanged.value = true;
     },
 };
 
@@ -301,18 +321,22 @@ const onSave = async () => {
         if ($grid) {
             if (!valid) return;
             const { insertRecords, updateRecords, removeRecords, pendingRecords } = $grid.getRecordset();
-            console.log(insertRecords, updateRecords, removeRecords, pendingRecords);
+            console.log('Recordset', insertRecords, updateRecords, removeRecords, pendingRecords);
+            for (const record of pendingRecords) {
+                await JobApi.del(record.id);
+                $grid.remove(record);
+            }
+            for (const record of removeRecords) {
+                record.seq = $grid.getRowSeq(record) as number;
+                await JobApi.del(record.id);
+            }
             for (const record of insertRecords) {
+                record.seq = $grid.getRowSeq(record) as number;
                 await JobApi.add(record);
             }
             for (const record of updateRecords) {
+                record.seq = $grid.getRowSeq(record) as number;
                 await JobApi.update(record);
-            }
-            for (const record of removeRecords) {
-                await JobApi.del(record.id);
-            }
-            for (const record of pendingRecords) {
-                await JobApi.del(record.id);
             }
             await refresh();
         }
@@ -335,13 +359,6 @@ const onCancel = async () => {
 
 const exec = async (row: JobMo) => {
     execRsync(row);
-    // try {
-    //     display.value.push(execRsync(row));
-    // } catch (error) {
-    //     console.error(error);
-    //     display.value.push(error);
-    //     VxeUI.modal.message({ content: '执行失败！', status: 'error' });
-    // }
 };
 
 onMounted(async () => {

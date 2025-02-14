@@ -3,7 +3,7 @@ import { JobMo } from '../mo/JobMo';
 
 export const JobApi = {
     list: async () => {
-        return await db.job.toArray();
+        return await db.job.orderBy('seq').toArray();
     },
     add: async (job: JobMo) => {
         return await db.job.add(job);
