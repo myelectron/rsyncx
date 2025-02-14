@@ -13,23 +13,129 @@
                     type="primary"
                     :icon="h(RightCircleOutlined)"
                     :disabled="isPendingByRow(row)"
-                    @click="makeDel(row)"
-                    >执行</a-button
+                    @click="exec(row)"
                 >
+                    执行
+                </a-button>
             </template>
         </vxe-grid>
     </div>
-    <div class="display"></div>
+    <div class="display">
+        <div class="header">命令行响应结果</div>
+        <div class="content" ref="displayContentRef">
+            <div
+                class="item"
+                :class="{
+                    'item-error': item.type === 'error',
+                }"
+                v-for="(item, index) in display"
+                :key="index"
+            >
+                {{ item.content }}
+            </div>
+        </div>
+    </div>
 </template>
 
 <script setup lang="ts">
 import { h, ref, reactive } from 'vue';
-import { PlusOutlined, DeleteOutlined, RightCircleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons-vue';
+import {
+    PlusOutlined,
+    DeleteOutlined,
+    RightCircleOutlined,
+    CheckOutlined,
+    CloseOutlined,
+    InfoCircleFilled,
+    CloseCircleFilled,
+} from '@ant-design/icons-vue';
 import { VxeUI, VxeGridInstance, VxeGridListeners, VxeGridProps, VxeTablePropTypes, VxeGridPropTypes } from 'vxe-table';
 import { JobMo } from './mo/JobMo';
 import { JobApi } from './api/JobApi';
+import { execRsync, onRsyncOutput, onRsyncError } from './util/RsyncUtils';
 
 const gridRef = ref<VxeGridInstance<JobMo>>();
+const display = ref([]);
+const displayContentRef = ref<HTMLElement>();
+
+let displayStatus: 'normal' | 'wait-file-name' | 'wait-send' = 'normal';
+let fileName = '';
+const pushDisplayItem = (item: { type: 'info' | 'error'; content: string }) => {
+    display.value.push(item);
+    nextTick(() => {
+        if (displayContentRef.value) {
+            displayContentRef.value.scrollTop = displayContentRef.value.scrollHeight;
+        }
+    });
+};
+onRsyncOutput((data) => {
+    console.log('data', data);
+    const lines = data.split('\n');
+    for (let line of lines) {
+        line = line.trim();
+        if (line === '') continue;
+        let content;
+        switch (displayStatus) {
+            case 'wait-file-name':
+                if (/^sent \d+ \w+  received \d+ \w+  \d+\.\d+ .+$/.test(line)) {
+                    const [_, sentBytes, sentUnit, receivedBytes, receivedUnit, speed, speedUnit] = line.match(
+                        /^sent (\d+) (\w+)  received (\d+) (\w+)  (\d+\.\d+) (.+)$/,
+                    );
+                    content = `已传送(${sentBytes}${sentUnit})，已接收(${receivedBytes}${receivedUnit})，速度(${speed}${speedUnit})`;
+                    displayStatus = 'normal';
+                } else {
+                    fileName = line;
+                    content = `文件名: ${fileName}`;
+                    displayStatus = 'wait-send';
+                }
+                break;
+            case 'wait-send':
+                const [completed, process, speed, time] = line.split(/\s+/);
+                content = `${fileName}: 进度(${process})，传送(${completed})，速度(${speed})，时间(${time})`;
+                const last = display.value[display.value.length - 1];
+                if (last.content.startsWith(`${fileName}: 进度(`)) {
+                    last.content = content;
+                } else {
+                    pushDisplayItem({ type: 'info', content });
+                }
+                if (process === '100%') displayStatus = 'normal';
+                continue;
+            case 'normal':
+                if (/^building file list \.\.\.$/.test(line)) {
+                    content = '正在准备处理文件...';
+                } else if (/^\d+ files\.\.\.$/.test(line)) {
+                    const fileCount = line.match(/^(\d+)/)[1];
+                    content = `已处理 ${fileCount} 个文件...`;
+                } else if (/^\d+ file to consider$/.test(line)) {
+                    const fileCount = line.match(/^(\d+)/)[1];
+                    content = `准备处理 ${fileCount} 个文件`;
+                    displayStatus = 'wait-file-name';
+                } else if (/^sent \d+ \w+  received \d+ \w+  \d+\.\d+ .+$/.test(line)) {
+                    const [_, sentBytes, sentUnit, receivedBytes, receivedUnit, speed, speedUnit] = line.match(
+                        /^sent (\d+) (\w+)  received (\d+) (\w+)  (\d+\.\d+) (.+)$/,
+                    );
+                    content = `已传送(${sentBytes}${sentUnit})，已接收(${receivedBytes}${receivedUnit})，速度(${speed}${speedUnit})`;
+                    const last = display.value[display.value.length - 1];
+                    if (last.content.startsWith(`${fileName}: 进度(`)) {
+                        last.content = fileName + ': ' + content;
+                        continue;
+                    }
+                } else if (/^total size is \d+  speedup is \d+\.\d+$/.test(line)) {
+                    const [_, totalSize, speedup] = line.match(/^total size is (\d+)  speedup is (\d+\.\d+)$/);
+                    content = `已处理文件总大小(${totalSize})，速度(${speedup})`;
+                } else {
+                    content = line;
+                }
+                break;
+            default:
+                content = line;
+        }
+        pushDisplayItem({ type: 'info', content });
+    }
+});
+onRsyncError((data) => {
+    pushDisplayItem({ type: 'error', content: data });
+    displayStatus = 'normal';
+});
 
 const editRules: VxeTablePropTypes.EditRules<JobMo> = {
     name: [{ required: true, message: '必须填写' }],
@@ -110,16 +216,6 @@ const gridOptions = reactive<VxeGridProps<JobMo>>({
     },
     editRules,
     columns,
-    // data,
-    //  [
-    //     {
-    //         seq: 1,
-    //         id: 1,
-    //         name: '柳化氯碱-adm-svr',
-    //         src: '~/workspace/rebue/adm/adm-svr/target/adm-svr-1.0.0.jar',
-    //         target: 'lhlj-prod:/usr/local/adm-svr/',
-    //     },
-    // ],
 });
 
 const gridEvents: VxeGridListeners<JobMo> = {
@@ -134,9 +230,6 @@ const gridEvents: VxeGridListeners<JobMo> = {
     editClosed({ row }) {
         const $grid = gridRef.value;
         if ($grid) {
-            // if ($grid.isUpdateByRow(row)) {
-            //     hasChanged.value = true;
-            // }
             hasChanged.value = checkChanged();
         }
     },
@@ -240,6 +333,17 @@ const onCancel = async () => {
     }
 };
 
+const exec = async (row: JobMo) => {
+    execRsync(row);
+    // try {
+    //     display.value.push(execRsync(row));
+    // } catch (error) {
+    //     console.error(error);
+    //     display.value.push(error);
+    //     VxeUI.modal.message({ content: '执行失败！', status: 'error' });
+    // }
+};
+
 onMounted(async () => {
     await refresh();
 });
@@ -253,6 +357,27 @@ button {
     flex-grow: 1;
 }
 .display {
+    display: flex;
+    flex-direction: column;
+    margin: 10px 0;
+    border: 1px solid #eee;
     height: 300px;
+    .header {
+        height: 30px;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .content {
+        /* padding: 10px; */
+        flex-grow: 1;
+        overflow: auto;
+        .item {
+            border-bottom: 1px solid #eee;
+            padding: 10px;
+        }
+    }
+}
+.item-error {
+    color: red;
 }
 </style>

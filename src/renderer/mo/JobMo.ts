@@ -5,7 +5,7 @@ export interface JobMo {
     src: string;
     target: string;
     port?: number;
-    delete?: boolean;
+    deleteRedundancy?: boolean;
     exclude?: string;
     args?: string;
     seq?: number;

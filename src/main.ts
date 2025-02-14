@@ -1,6 +1,7 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import { spawn, SpawnOptionsWithoutStdio } from 'child_process';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -54,3 +55,16 @@ app.on('activate', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+
+// 监听渲染进程的同步请求
+ipcMain.on('spawn-rsync', (event, params: string[], options: SpawnOptionsWithoutStdio) => {
+    console.log('rsync', params, options);
+    options?.cwd === 'home' && (options.cwd = process.env.HOME || process.env.USERPROFILE);
+    const childProcess = spawn('rsync', params, options);
+    childProcess.stdout.on('data', (data) => {
+        event.sender.send('rsync-output', data.toString());
+    });
+    childProcess.stderr.on('data', (data) => {
+        event.sender.send('rsync-error', data.toString());
+    });
+});
