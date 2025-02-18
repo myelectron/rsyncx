@@ -7,7 +7,7 @@ const db = new Dexie('rsyncx') as Dexie & {
 };
 
 // 定义数据库模式
-const schema = '++id,&name,seq';
+const schema = '&id,&name,seq';
 db.version(1).stores({
     job: schema,
 });

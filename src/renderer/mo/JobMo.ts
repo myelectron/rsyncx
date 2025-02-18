@@ -1,6 +1,6 @@
 /** 工作 */
 export interface JobMo {
-    id: number;
+    id: string;
     name: string;
     src: string;
     target: string;

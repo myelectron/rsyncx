@@ -38,16 +38,10 @@
 </template>
 
 <script setup lang="ts">
+/* @ts-expect-error */
+import { ulid } from 'ulid';
 import { h, ref, reactive } from 'vue';
-import {
-    PlusOutlined,
-    DeleteOutlined,
-    RightCircleOutlined,
-    CheckOutlined,
-    CloseOutlined,
-    InfoCircleFilled,
-    CloseCircleFilled,
-} from '@ant-design/icons-vue';
+import { PlusOutlined, DeleteOutlined, RightCircleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons-vue';
 import { VxeUI, VxeGridInstance, VxeGridListeners, VxeGridProps, VxeTablePropTypes, VxeGridPropTypes } from 'vxe-table';
 import { JobMo } from './mo/JobMo';
 import { JobApi } from './api/JobApi';
@@ -136,6 +130,8 @@ onRsyncError((data) => {
     displayStatus = 'normal';
 });
 
+let gridData: JobMo[] = [];
+
 const editRules: VxeTablePropTypes.EditRules<JobMo> = {
     name: [{ required: true, message: '必须填写' }],
     src: [{ required: true, message: '必须填写' }],
@@ -199,6 +195,7 @@ const gridOptions = reactive<VxeGridProps<JobMo>>({
     },
     rowConfig: {
         useKey: true,
+        keyField: 'id',
         isHover: true,
         drag: true,
         isCurrent: true,
@@ -232,33 +229,57 @@ const gridEvents: VxeGridListeners<JobMo> = {
             hasChanged.value = checkChanged();
         }
     },
-    rowDragend() {
-        const $grid = gridRef.value;
-        if ($grid) {
-            // const data = $grid.getData();
-            // console.log('fullData', data);
-            // let seq = 0;
-            // for (let record of data) {
-            //     console.log('record', record);
-            //     const row = $grid.getRowById(record.id);
-            //     console.log('row', row);
-            //     if (isPendingByRow(row)) {
-            //         continue;
-            //     }
-            //     seq++;
-            //     if (row.seq !== seq + 1) {
-            //         row.seq = seq + 1;
-            //     }
-            // }
-        }
-        hasChanged.value = true;
+    rowDragend: async () => {
+        await updateSeq();
+        hasChanged.value = checkChanged();
     },
 };
 
+/**
+ * 判断行是否处于 pending 状态
+ * FIXME: vxetable bug，没有提供 isPendingByRow 方法
+ */
+const isPendingByRow = (row: JobMo) => {
+    const $grid = gridRef.value;
+    // return $grid && $grid.isPendingByRow(row);
+    return $grid.getPendingRecords().some((item) => item.id === row.id);
+};
+
+const hasChanged = ref(false);
+
+const checkChanged = () => {
+    const $grid = gridRef.value;
+    if (!!!$grid) return false;
+    const { pendingRecords } = $grid.getRecordset();
+    if (pendingRecords.length > 0) return true;
+    const fullData = $grid.getFullData();
+    // console.log('gridData', JSON.stringify(gridData));
+    // console.log('fullData', JSON.stringify(fullData));
+    return JSON.stringify(gridData) !== JSON.stringify(fullData);
+};
+
+const updateSeq = async () => {
+    const $grid = gridRef.value;
+    const fullData = $grid.getFullData();
+    let seq = 0;
+    for (let row of fullData) {
+        if (isPendingByRow(row)) {
+            continue;
+        }
+        seq++;
+        if (row.seq !== seq) {
+            row.seq = seq;
+        }
+    }
+};
+
 const refresh = async () => {
+    const $grid = gridRef.value;
     gridOptions.loading = true;
     try {
-        gridOptions.data = await JobApi.list();
+        gridData = await JobApi.list();
+        $grid.reloadData(JSON.parse(JSON.stringify(gridData)));
+        // $grid.reloadData(gridData);
         hasChanged.value = false;
     } catch (error) {
         console.error(error);
@@ -271,36 +292,22 @@ const refresh = async () => {
 const onAdd = async () => {
     const $grid = gridRef.value;
     const newRow: JobMo = {
-        id: undefined,
+        id: ulid(),
         name: undefined,
         src: undefined,
         target: undefined,
+        seq: 1,
     };
     const { row } = await $grid.insertAt(newRow, null);
+    await updateSeq();
     await $grid.setEditRow(row);
     hasChanged.value = true;
-};
-
-const hasChanged = ref(false);
-
-const checkChanged = () => {
-    const $grid = gridRef.value;
-    if (!$grid) return false;
-    const { insertRecords, updateRecords, removeRecords, pendingRecords } = $grid.getRecordset();
-    return (
-        insertRecords.length > 0 || updateRecords.length > 0 || removeRecords.length > 0 || pendingRecords.length > 0
-    );
 };
 
 const makeDel = async (row: JobMo) => {
     const $grid = gridRef.value;
     await $grid.togglePendingRow(row);
     hasChanged.value = checkChanged();
-};
-
-const isPendingByRow = (row: JobMo) => {
-    const $grid = gridRef.value;
-    return $grid.getPendingRecords().some((item) => item.id === row.id);
 };
 
 /**
@@ -320,23 +327,19 @@ const onSave = async () => {
         const $grid = gridRef.value;
         if ($grid) {
             if (!valid) return;
-            const { insertRecords, updateRecords, removeRecords, pendingRecords } = $grid.getRecordset();
-            console.log('Recordset', insertRecords, updateRecords, removeRecords, pendingRecords);
+            const { pendingRecords } = $grid.getRecordset();
             for (const record of pendingRecords) {
                 await JobApi.del(record.id);
                 $grid.remove(record);
             }
-            for (const record of removeRecords) {
-                record.seq = $grid.getRowSeq(record) as number;
-                await JobApi.del(record.id);
-            }
-            for (const record of insertRecords) {
-                record.seq = $grid.getRowSeq(record) as number;
-                await JobApi.add(record);
-            }
-            for (const record of updateRecords) {
-                record.seq = $grid.getRowSeq(record) as number;
-                await JobApi.update(record);
+            const fullData = $grid.getFullData();
+            for (const row of fullData) {
+                const record = gridData.find((item) => item.id === row.id);
+                if (record === undefined) {
+                    await JobApi.add(row);
+                } else if (JSON.stringify(record) !== JSON.stringify(row)) {
+                    await JobApi.update(row);
+                }
             }
             await refresh();
         }

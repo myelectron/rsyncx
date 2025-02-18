@@ -6,14 +6,15 @@ export const JobApi = {
         return await db.job.orderBy('seq').toArray();
     },
     add: async (job: JobMo) => {
-        return await db.job.add(job);
+        console.log('add', job);
+        return await db.job.add({ ...job });
     },
     update: async (job: JobMo) => {
-        console.log(job);
-
-        return await db.job.update(job.id, job);
+        console.log('update', job);
+        return await db.job.put({ ...job });
     },
-    del: async (id: number) => {
+    del: async (id: string) => {
+        console.log('delete', id);
         return await db.job.delete(id);
     },
 };
