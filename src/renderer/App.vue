@@ -142,20 +142,22 @@ const columns: VxeGridPropTypes.Columns<JobMo> = [
     {
         field: 'name',
         title: '名称',
-        width: '200',
+        minWidth: 100,
+        width: 200,
         dragSort: true,
         editRender: { name: 'input' },
     },
-    { field: 'src', title: '来源', width: '400', editRender: { name: 'input' } },
-    { field: 'target', title: '目标', width: '400', editRender: { name: 'input' } },
+    { field: 'src', title: '来源', minWidth: 100, width: 400, editRender: { name: 'input' } },
+    { field: 'target', title: '目标', minWidth: 100, width: 400, editRender: { name: 'input' } },
     {
         field: 'port',
         title: '端口',
+        minWidth: 80,
         width: 80,
         editRender: { name: 'VxeNumberInput', props: { type: 'integer' } },
     },
-    { field: 'exclude', title: '排除', width: 150, editRender: { name: 'input' } },
-    { field: 'args', title: '其它参数', width: '200', editRender: { name: 'input' } },
+    { field: 'exclude', title: '排除', minWidth: 100, width: 150, editRender: { name: 'input' } },
+    { field: 'args', title: '其它参数', minWidth: 100, width: 200, editRender: { name: 'input' } },
     {
         field: 'delete',
         title: '删除冗余',
@@ -168,7 +170,7 @@ const columns: VxeGridPropTypes.Columns<JobMo> = [
             },
         },
     },
-    { title: '操作', fixed: 'right', width: 204, resizable: false, slots: { default: 'action' } },
+    { title: '操作', fixed: 'right', width: 210, resizable: false, slots: { default: 'action' } },
 ];
 
 const gridOptions = reactive<VxeGridProps<JobMo>>({
