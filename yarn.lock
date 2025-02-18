@@ -2980,9 +2980,9 @@ flat-cache@^3.0.4:
     rimraf "^3.0.2"
 
 flatted@^3.2.9:
-  version "3.3.2"
-  resolved "https://registry.npmmirror.com/flatted/-/flatted-3.3.2.tgz#adba1448a9841bec72b42c532ea23dbbedef1a27"
-  integrity sha512-AiwGJM8YcNOaobumgtng+6NHuOqC3A7MixFeDafM3X9cIUM+xUXoS5Vfgf+OihAYe20fxqNM9yPBXJzRtZ/4eA==
+  version "3.3.3"
+  resolved "https://registry.npmmirror.com/flatted/-/flatted-3.3.3.tgz#67c8fad95454a7c7abebf74bb78ee74a44023358"
+  integrity sha512-GX+ysw4PBCz0PzosHDepZGANEuFCMLrnRTiEy9McGjmkCQYwRq4A/X786G/fjM/+OjsWSU1ZrY5qyARZmO/uwg==
 
 flora-colossus@^2.0.0:
   version "2.0.0"
@@ -6150,9 +6150,9 @@ vxe-pc-ui@^4.3.90:
     "@vxe-ui/core" "^4.0.33"
 
 vxe-table@^4.10.15:
-  version "4.11.1"
-  resolved "https://registry.npmmirror.com/vxe-table/-/vxe-table-4.11.1.tgz#4f6052cc119cc0a9e61738bc942f73dcf4b42319"
-  integrity sha512-KejhRHHig3JRKknc1Z4Cl6Wzk4TStrGq2mg9gCKZNgLOQEj9VdqFK+FmvtVEa1cFkrrErpFJYrQNaY9OvZjh/g==
+  version "4.11.3"
+  resolved "https://registry.npmmirror.com/vxe-table/-/vxe-table-4.11.3.tgz#7921de764d18f45c7c79087f4d29dbd0efe9aef1"
+  integrity sha512-TIaGnzBdpYdGfdKoRdXySkYZT411SFdhKBKw6dwjso0UZT8Zv0ZvhwmYnrl94QPLE2QOlBixAC8h/gKQbniBww==
   dependencies:
     vxe-pc-ui "^4.3.90"
 

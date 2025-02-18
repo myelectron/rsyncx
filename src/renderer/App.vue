@@ -168,7 +168,7 @@ const columns: VxeGridPropTypes.Columns<JobMo> = [
             },
         },
     },
-    { title: '操作', fixed: 'right', width: 202, resizable: false, slots: { default: 'action' } },
+    { title: '操作', fixed: 'right', width: 204, resizable: false, slots: { default: 'action' } },
 ];
 
 const gridOptions = reactive<VxeGridProps<JobMo>>({
