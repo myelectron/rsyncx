@@ -9,7 +9,26 @@
             </template>
             <template #action="{ row }">
                 <a-button :icon="h(DeleteOutlined)" @click="makeDel(row)">删除</a-button>
-                <a-button
+                <a-dropdown-button @click="exec(row)" :disabled="isPendingByRow(row)">
+                    <RightCircleOutlined v-if="!row.isReversed" />
+                    <LeftCircleOutlined v-else />
+                    执行
+                    <template #overlay>
+                        <a-menu @click="row.isReversed = !row.isReversed">
+                            <a-menu-item>
+                                <RightCircleOutlined />
+                                正向
+                                <CheckOutlined v-show="!!!row.isReversed" />
+                            </a-menu-item>
+                            <a-menu-item>
+                                <LeftCircleOutlined />
+                                反向
+                                <CheckOutlined v-show="row.isReversed" />
+                            </a-menu-item>
+                        </a-menu>
+                    </template>
+                </a-dropdown-button>
+                <!-- <a-button
                     type="primary"
                     :icon="h(RightCircleOutlined)"
                     :disabled="isPendingByRow(row)"
@@ -17,6 +36,14 @@
                 >
                     执行
                 </a-button>
+                <a-button
+                    type="primary"
+                    :icon="h(RightCircleOutlined)"
+                    :disabled="isPendingByRow(row)"
+                    @click="exec(row)"
+                >
+                    反向执行
+                </a-button> -->
             </template>
         </vxe-grid>
     </div>
@@ -38,10 +65,16 @@
 </template>
 
 <script setup lang="ts">
-/* @ts-expect-error */
 import { ulid } from 'ulid';
 import { h, ref, reactive } from 'vue';
-import { PlusOutlined, DeleteOutlined, RightCircleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons-vue';
+import {
+    PlusOutlined,
+    DeleteOutlined,
+    LeftCircleOutlined,
+    RightCircleOutlined,
+    CheckOutlined,
+    CloseOutlined,
+} from '@ant-design/icons-vue';
 import { VxeUI, VxeGridInstance, VxeGridListeners, VxeGridProps, VxeTablePropTypes, VxeGridPropTypes } from 'vxe-table';
 import { JobMo } from './mo/JobMo';
 import { JobApi } from './api/JobApi';
@@ -159,7 +192,7 @@ const columns: VxeGridPropTypes.Columns<JobMo> = [
     { field: 'exclude', title: '排除', minWidth: 100, width: 150, editRender: { name: 'input' } },
     { field: 'args', title: '其它参数', minWidth: 100, width: 200, editRender: { name: 'input' } },
     {
-        field: 'delete',
+        field: 'deleteRedundancy',
         title: '删除冗余',
         width: 80,
         resizable: false,
@@ -170,7 +203,7 @@ const columns: VxeGridPropTypes.Columns<JobMo> = [
             },
         },
     },
-    { title: '操作', fixed: 'right', width: 210, resizable: false, slots: { default: 'action' } },
+    { title: '操作', fixed: 'right', width: 250, resizable: false, slots: { default: 'action' } },
 ];
 
 const gridOptions = reactive<VxeGridProps<JobMo>>({
@@ -244,7 +277,7 @@ const gridEvents: VxeGridListeners<JobMo> = {
 const isPendingByRow = (row: JobMo) => {
     const $grid = gridRef.value;
     // return $grid && $grid.isPendingByRow(row);
-    return $grid.getPendingRecords().some((item) => item.id === row.id);
+    return $grid.getPendingRecords().some((item: { id: string; }) => item.id === row.id);
 };
 
 const hasChanged = ref(false);
@@ -362,8 +395,16 @@ const onCancel = async () => {
     }
 };
 
-const exec = async (row: JobMo) => {
-    execRsync(row);
+/**
+ * 执行
+ */
+const exec = async (jobMo: JobMo) => {
+    const newJobMo = { ...jobMo };
+    if (jobMo.isReversed) {
+        newJobMo.src = jobMo.target;
+        newJobMo.target = jobMo.src;
+    }
+    execRsync(newJobMo);
 };
 
 onMounted(async () => {

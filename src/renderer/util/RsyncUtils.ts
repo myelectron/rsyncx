@@ -9,7 +9,7 @@ export const execRsync = (job: JobMo) => {
     const params: string[] = ['-avzP'];
     port && params.push(`-e 'ssh -p ${port}'`);
     deleteRedundancy && params.push('--delete');
-    exclude && params.push(`--exclude=${exclude.split(/[\s,]+/).join(' --exclude=')}`);
+    exclude && params.push(...`--exclude=${exclude.split(/[\s,]+/).join(' --exclude=')}`.split(/[\s]+/));
     args && params.push(args);
     if (src.startsWith('~/') || target.startsWith('~/')) {
         src = src.replace(/^~\//, '');
